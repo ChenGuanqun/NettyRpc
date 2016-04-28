@@ -7,10 +7,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.nettyrpc.client.ConnectManage;
+
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +27,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ServiceDiscovery {
 
+	
+	
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceDiscovery.class);
 
     private CountDownLatch latch = new CountDownLatch(1);
@@ -40,6 +46,38 @@ public class ServiceDiscovery {
         }
     }
 
+    public boolean getRemoteLock(){
+		try {
+			Stat s = zookeeper.exists(Constant.ZK_lOCK, false);
+	         if (s == null) {
+	        	 zookeeper.create(Constant.ZK_lOCK, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+	        	 return true;
+	         }
+
+		} catch (KeeperException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			//System.out.println(e.getMessage());
+			return false;
+		}
+       return false;
+    }
+    
+    public boolean removeRemoteLock(){
+    	try {
+			Stat s = zookeeper.exists(Constant.ZK_lOCK, false);
+	         if (s != null) {
+	        	 //zookeeper.create(Constant.ZK_REGISTRY_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+	        	 zookeeper.delete(Constant.ZK_lOCK, -1);
+	        	 return true;
+	         }
+
+		} catch (KeeperException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+       return false;
+    }
+    
     public String discover() {
         String data = null;
         int size = dataList.size();
